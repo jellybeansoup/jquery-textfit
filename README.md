@@ -5,9 +5,6 @@ TextFit is a jQuery plugin that automatically resizes HTML `textarea` elements t
 ##Requirements
 
 * [jQuery](http://jquery.com)
-* [ZURB's Text Change Event Plugin](http://www.zurb.com/playground/jquery-text-change-custom-event)
-
-**Please note:** TextFit will work just fine without the text change event, however the content will only fit when jQuery's built in 'change' event is triggered.
 
 ##Installation
 

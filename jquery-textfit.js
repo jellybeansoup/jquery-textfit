@@ -2,9 +2,9 @@
 * TextFit
 *
 * Automatically size a textarea to fit it's content as you type.
-* Requires jQuery, and works best with ZURB's textchange plugin (http://www.zurb.com/playground/jquery-text-change-custom-event)
+* Requires jQuery.
 *
-* @version 1.1
+* @version 1.2
 * @category Form helper
 * @author Daniel Farrelly <daniel@jellystyle.com>
 * @link <https://github.com/jellybeansoup/jquery-textfit>
@@ -46,6 +46,13 @@
 				},
 
 				/**
+				* The interval used to track changes to the textarea's content
+				* @var object
+				*/
+
+				_value: null,
+
+				/**
 				* Initiate the textfit functionality on a given DOM object.
 				* @param object object The jQuery DOM object.
 				* @return void
@@ -59,28 +66,44 @@
 					widget._properties.min = widget._dom.textarea.height();
 					widget._properties.max = widget._dom.textarea.css('max-height') !== 'none' ? widget._dom.textarea.css('max-height') : null;
 					// Create a dummy element
-					widget._dom.dummy = $('<div />').css({
+					widget._dom.dummy = $('<div />').addClass('textfit-dummy').css({
 						'position': 'absolute',
 						'top': '-1000000px',
 						'left': '-1000000px',
 						'width': widget._dom.textarea.width(),
 						'font-family': widget._dom.textarea.css('font-family'),
 						'font-size': widget._dom.textarea.css('font-size'),
+						'font-weight': widget._dom.textarea.css('font-weight'),
 						'line-height': widget._dom.textarea.css('line-height'),
+						'word-wrap': widget._dom.textarea.css('word-wrap'),
 						'padding-top': widget._dom.textarea.css('padding-top'),
 						'padding-bottom': widget._dom.textarea.css('padding-bottom'),
 						'padding-left': widget._dom.textarea.css('padding-left'),
 						'padding-right': widget._dom.textarea.css('padding-right')
 					}).appendTo('body');
-					// Resize when the text changes
+					// Resize the textarea based on the initial content
 					widget._dom.textarea.css({
 						'overflow': 'hidden',
-						'height': widget._properties.min
+						'height': widget._properties.min,
+						'resize': 'none'
 					});
 					// Resize when the text changes
-					widget._dom.textarea.bind('textchange change',widget,function(e){
+					widget._dom.textarea.on('keyup change',widget,function(e){
 						e.data._fitToContent();
-					}).change();
+					});
+					widget._dom.textarea.on('cut paste input',widget,function(e){
+						// This interval makes the adjustment kick in as soon as the content changes
+						var interval = setInterval(function(){
+							// If the content hasn't changed, we do nothing.
+							if( widget._dom.textarea.val() === widget._value ) {
+								return;
+							}
+							// Destory the interval
+							clearInterval( interval );
+							// Fit to the content
+							e.data._fitToContent();
+						},1);
+					});
 					// Set the starting size
 					var newHeight = this._determineSize();
 					if( widget._dom.textarea.height() !== newHeight ) {
@@ -95,6 +118,13 @@
 
 				_fitToContent: function() {
 					var widget = this;
+					// If the content hasn't changed, we do nothing.
+					if( widget._dom.textarea.val() === widget._value ) {
+						return;
+					}
+					// Store the value so we know not to do this again
+					widget._value = widget._dom.textarea.val();
+					// Determine the size of the updated content
 					var newHeight = widget._determineSize();
 					if( widget._dom.textarea.height() !== newHeight ) {
 						widget._dom.textarea.stop();
@@ -132,7 +162,7 @@
 				* @var string
 				*/
 
-				_version: '1.1'
+				_version: '1.2'
 
 			};
 			// Instatniate the widget
