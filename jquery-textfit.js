@@ -66,21 +66,24 @@
 					widget._properties.min = widget._dom.textarea.height();
 					widget._properties.max = widget._dom.textarea.css('max-height') !== 'none' ? widget._dom.textarea.css('max-height') : null;
 					// Create a dummy element
-					widget._dom.dummy = $('<div />').addClass('textfit-dummy').css({
-						'position': 'absolute',
-						'top': '-1000000px',
-						'left': '-1000000px',
-						'width': widget._dom.textarea.width(),
-						'font-family': widget._dom.textarea.css('font-family'),
-						'font-size': widget._dom.textarea.css('font-size'),
-						'font-weight': widget._dom.textarea.css('font-weight'),
-						'line-height': widget._dom.textarea.css('line-height'),
-						'word-wrap': widget._dom.textarea.css('word-wrap'),
-						'padding-top': widget._dom.textarea.css('padding-top'),
-						'padding-bottom': widget._dom.textarea.css('padding-bottom'),
-						'padding-left': widget._dom.textarea.css('padding-left'),
-						'padding-right': widget._dom.textarea.css('padding-right')
-					}).appendTo('body');
+					widget._dom.dummy = $('<div />').addClass('textfit-dummy').appendTo('body');
+					// Copy styles to the dummy element
+					var styles = [
+						'width', 'font-family', 'font-size', 'font-weight', 'line-height', 'word-wrap', 'padding-top', 'padding-bottom',
+						'padding-left', 'padding-right', 'border-top', 'border-bottom', 'border-left', 'border-right', '-moz-box-sizing',
+						'-webkit-box-sizing', 'box-sizing'
+					];
+					var css = {
+						position: 'absolute',
+						top: '-1000000px',
+						left: '-1000000px',
+						width: widget._dom.textarea.width(),
+					};
+					for( var i in styles ) {
+						var style = styles[i];
+						css[style] = widget._dom.textarea.css(style);
+					}
+					widget._dom.dummy.css(css);
 					// Resize the textarea based on the initial content
 					widget._dom.textarea.css({
 						'overflow': 'hidden',
@@ -105,10 +108,12 @@
 						},1);
 					});
 					// Set the starting size
-					var newHeight = this._determineSize();
-					if( widget._dom.textarea.height() !== newHeight ) {
-						widget._dom.textarea.css({ height: newHeight });
-					}
+					setTimeout(function(){
+						var newHeight = widget._determineSize();
+						if( widget._dom.textarea.height() !== newHeight ) {
+							widget._dom.textarea.css({ height: newHeight });
+						}
+					},50);
 				},
 
 				/**
@@ -129,10 +134,12 @@
 					if( widget._dom.textarea.height() !== newHeight ) {
 						widget._dom.textarea.stop();
 						var difference = widget._dom.textarea.val().length - widget._properties.length;
-						if( difference < -1 || difference > 1 )
+						if( difference > -1 ) {
 							widget._dom.textarea.css({ height: newHeight });
-						else
+						}
+						else {
 							widget._dom.textarea.animate({ height: newHeight },100);
+						}
 					}
 					// Update the length
 					widget._properties.length = widget._dom.textarea.val().length;
@@ -148,13 +155,21 @@
 					// Copy the text to the dummy element
 					widget._dom.dummy.html( widget._dom.textarea.val().replace(/\n/gi,'&nbsp;<br/>') + '<br/>&nbsp;' );
 					widget._dom.dummy.css({ width: widget._dom.textarea.width() });
+					// Get the height and try to match the box sizing
+					var new_height = widget._dom.dummy.height();
+					if( widget._dom.textarea.css('box-sizing') === 'border-box' ) {
+						new_height = widget._dom.dummy.outerHeight( true );
+					}
 					// Default to the min and max heights
-					if( widget._properties.min !== null && widget._dom.dummy.height() < widget._properties.min )
+					if( widget._properties.min !== null && new_height < widget._properties.min ) {
 						return widget._properties.min;
-					else if( widget._properties.max !== null && widget._dom.dummy.height() > widget._properties.max )
+					}
+					else if( widget._properties.max !== null && new_height > widget._properties.max ) {
 						return widget._properties.max;
-					else
-						return widget._dom.dummy.height();
+					}
+					else {
+						return new_height;
+					}
 				},
 
 				/**
