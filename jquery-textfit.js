@@ -69,7 +69,7 @@
 					widget._dom.dummy = $('<div />').addClass('textfit-dummy').appendTo('body');
 					// Copy styles to the dummy element
 					var styles = [
-						'width', 'font-family', 'font-size', 'font-weight', 'line-height', 'word-wrap', 'padding-top', 'padding-bottom',
+						'width', 'font-family', 'font-size', 'font-weight', 'line-height', 'word-wrap', 'white-space', 'padding-top', 'padding-bottom',
 						'padding-left', 'padding-right', 'border-top', 'border-bottom', 'border-left', 'border-right', '-moz-box-sizing',
 						'-webkit-box-sizing', 'box-sizing'
 					];
@@ -98,7 +98,7 @@
 						// This interval makes the adjustment kick in as soon as the content changes
 						var interval = setInterval(function(){
 							// If the content hasn't changed, we do nothing.
-							if( widget._dom.textarea.val() === widget._value ) {
+							if( widget._content() === widget._value ) {
 								return;
 							}
 							// Destory the interval
@@ -121,19 +121,31 @@
 				* @return void
 				*/
 
+				_content: function() {
+					var widget = this;
+					return widget._dom.textarea.val().replace(/[\u00A0-\u9999<>\&]/gim, function(i) {
+						return '&#'+i.charCodeAt(0)+';';
+					});
+				},
+
+				/**
+				* Size the element to fit it's content.
+				* @return void
+				*/
+
 				_fitToContent: function() {
 					var widget = this;
 					// If the content hasn't changed, we do nothing.
-					if( widget._dom.textarea.val() === widget._value ) {
+					if( widget._content() === widget._value ) {
 						return;
 					}
 					// Store the value so we know not to do this again
-					widget._value = widget._dom.textarea.val();
+					widget._value = widget._content();
 					// Determine the size of the updated content
 					var newHeight = widget._determineSize();
 					if( widget._dom.textarea.height() !== newHeight ) {
 						widget._dom.textarea.stop();
-						var difference = widget._dom.textarea.val().length - widget._properties.length;
+						var difference = widget._content().length - widget._properties.length;
 						if( difference > -1 ) {
 							widget._dom.textarea.css({ height: newHeight });
 						}
@@ -142,7 +154,7 @@
 						}
 					}
 					// Update the length
-					widget._properties.length = widget._dom.textarea.val().length;
+					widget._properties.length = widget._content().length;
 				},
 
 				/**
@@ -153,7 +165,7 @@
 				_determineSize: function() {
 					var widget = this;
 					// Copy the text to the dummy element
-					widget._dom.dummy.html( widget._dom.textarea.val().replace(/\n/gi,'&nbsp;<br/>') + '<br/>&nbsp;' );
+					widget._dom.dummy.html( widget._content().replace(/\n/gi,'&nbsp;<br/>') + '<br/>&nbsp;' );
 					widget._dom.dummy.css({ width: widget._dom.textarea.width() });
 					// Get the height and try to match the box sizing
 					var new_height = widget._dom.dummy.height();
